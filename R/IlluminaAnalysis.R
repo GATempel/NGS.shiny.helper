@@ -35,6 +35,11 @@
 #' @param multithreading a logical value
 #'        is parsed to the multithread option of the underlying dada functions
 #'        will enable multi-processor core usage - does not work on windows OS
+#' @param skipTree a logical value
+#'        if TRUE the phylogenetic TREE will not be calculated and a marker will be
+#'        created to annouce this within the displayApp - used as an option to save
+#'        time as processing time increases exponetially with sample number
+#'
 #' @import cooccur
 #' @import dada2
 #' @import phyloseq
@@ -56,11 +61,19 @@ illumina_analysis <- function(input_path = "./files",
                               # which forward reads are to be trunctuated
                               # default is set to 270
                               trim_left_forw = 10,
+                              # trim_left_forw is an integer that determines how
+                              # many bases at the beginning of the forward sequence
+                              # are trimmed
+                              # default is set to 10
                               trunc_rev = 220,
                               # trunc_rev is integer to determine length at
                               # which reverse reads are to be trunctuated
                               # default is set to 220
                               trim_left_rev = 10,
+                              # trim_left_rev is an integer that determines how
+                              # many bases at the beginning of the reverse sequence
+                              # are trimmed
+                              # default is set to 10
                               seq_length = 400:460,
                               # seq_length is range of the expected length of
                               # aligned forward and reverse reads
@@ -83,10 +96,14 @@ illumina_analysis <- function(input_path = "./files",
                               resort = TRUE,
                               # takes a logical value
                               # if true the sampleNames will be resorted
-                              multithreading = TRUE
+                              multithreading = TRUE,
                               # logical value
                               # if TRUE multiple processor cores will be used
                               # does not work on windows OS
+                              skipTree = FALSE
+                              # logical value
+                              # if TRUE the calculations for the phylogenetic tree
+                              # will be skipped in order to save time
 ){
   # list as variables - this is a necessity for use within shiny
   lsorig <- ls()
@@ -524,6 +541,15 @@ illumina_analysis <- function(input_path = "./files",
                                 taxRank[x - (j + 1)],
                                 "=",
                                 tempdf[i , x - (j + 1)])
+        } else if
+        (
+          is.na(name[i, 1]) &
+          is.na(tempdf[i, 1])
+        )
+        {
+          name[i, 1] <- paste0("NA_(",
+                               taxRank[1],
+                               ")")
         }
       }
       for (k in 1:x) {
@@ -691,41 +717,49 @@ illumina_analysis <- function(input_path = "./files",
   SampleDataFrame <- data.frame(Samplename = SampleNames)
   rownames(SampleDataFrame) <- SampleNames
 
-  # create boolean Value to note if phylogenetic tree was created
-  skipdTree <- F
-  # extract sequences
-  message("Creating a distance matrix of the sequences -
+  # create the phylogenetic tree if the option to skip it was not chosen and create
+  # a value denoting the chosen option for further use downstream
+  if (skipTree == F) {
+    # create boolean Value to note if phylogenetic tree was created
+    skipedTree <- F
+    # extract sequences
+    message("Creating a distance matrix of the sequences -
           this process can take several minutes.")
-  sequences <- dada2::getSequences(NonChime)
-  # gives the sequences characters names that will be used as tip labels
-  names(sequences) <- sequences
-  # aligning sequences and creating distance matrix
-  alignment <- DECIPHER::AlignSeqs(Biostrings::DNAStringSet(sequences),
-                                   anchor = NA)
-  fangoAlign <- phangorn::phyDat(as(alignment,
-                                    "matrix"),
-                                 type = "DNA")
-  # compute pairwise distances from sequences
-  fangoDist <- phangorn::dist.ml(fangoAlign)
-  # neighbor joining tree estimation
-  NJtree <- phangorn::NJ(fangoDist)
-  # compute likelihood of phylogenetic tree
-  fit <- phangorn::pml(NJtree,
-                       data = fangoAlign)
-  fit <- stats::update(fit,
-                       k = 4,
-                       inv = 0.2)
-  fitGTR <- phangorn::optim.pml(fit,
-                                model="GTR",
-                                optInv=TRUE,
-                                optGamma=TRUE,
-                                rearrangement = "stochastic",
-                                control = phangorn::pml.control(trace = 0)
-                                )
+    sequences <- dada2::getSequences(NonChime)
+    # gives the sequences characters names that will be used as tip labels
+    names(sequences) <- sequences
+    # aligning sequences and creating distance matrix
+    alignment <- DECIPHER::AlignSeqs(Biostrings::DNAStringSet(sequences),
+                                     anchor = NA)
+    fangoAlign <- phangorn::phyDat(as(alignment,
+                                      "matrix"),
+                                   type = "DNA")
+    # compute pairwise distances from sequences
+    fangoDist <- phangorn::dist.ml(fangoAlign)
+    # neighbor joining tree estimation
+    NJtree <- phangorn::NJ(fangoDist)
+    # compute likelihood of phylogenetic tree
+    fit <- phangorn::pml(NJtree,
+                         data = fangoAlign)
+    fit <- stats::update(fit,
+                         k = 4,
+                         inv = 0.2)
+    fitGTR <- phangorn::optim.pml(fit,
+                                  model="GTR",
+                                  optInv=TRUE,
+                                  optGamma=TRUE,
+                                  rearrangement = "stochastic",
+                                  control = phangorn::pml.control(trace = 0)
+    )
 
-  # updating logframe
-  logframe <- addLog("Creating distance matrix and phylogenetic tree",
-                     logframe)
+    # updating logframe
+    logframe <- addLog("Creating distance matrix and phylogenetic tree",
+                       logframe)
+  } else {
+    skipedTree <- T
+  }
+
+
 
   # save all variables under BackUp.RData
   lsnow <- ls()
@@ -789,7 +823,7 @@ illumina_analysis <- function(input_path = "./files",
   savelist <- c(savelist[1:length(savelist)],
                 "CompletePhyl",
                 "userinput",
-                "skipdTree")
+                "skipedTree")
   save(list = (savelist),
        file = paste0(RDF,
                      "/IlluminaAnalysis.RData"))
