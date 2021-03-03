@@ -1,0 +1,27 @@
+Package: NGS.shiny.helper
+Type: Package
+Title: R package containing various helper functions that enable the NGS.shiny.tool ShinyApp
+Version: 0.1.0
+Author: Gregor Tempel, Stefan Rödiger
+Maintainer: Gregor Tempel <tempel.gregor@posteo.de>
+Description: The functions within this package are mostly internal helper
+    functions. The main function is the illuminaAnalysis function. It processes
+    Illumina NGS data on the basis of the dada and the phyloseq package and 
+    returns a processable .RData file.
+License: GPL-2
+Encoding: UTF-8
+LazyData: true
+Imports:
+    Biostrings,
+    cooccur,
+    dada2,
+    DECIPHER,
+    dplyr,
+    filesstrings,
+    gtools,
+    phangorn,
+    phyloseq,
+    plyr,
+    stringr,
+    tidyr
+Suggests:
