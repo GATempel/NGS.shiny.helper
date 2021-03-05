@@ -419,65 +419,69 @@ illumina_analysis <- function(input_path = "./files",
   # abundance table as well a a tidy version, an Occurance table and the
   # Co_occurance data
   while (length(taxRank) > 1) {
-    # iterates through the elements in the taxRank object
-    x <- length(taxRank)
+    # as long as the taxRank object contains more than one entry the loop will be
+    # executed
+
+    # assign the amount of entries in the taxRank object to the tRlength variable
+    tRlength <- length(taxRank)
     # create an empty temporary object
     temps3 <- NULL
     # create a temporary dataframe on the basis of the given dataframe
     # all rows that contain the same elements within the taxonomic Rank columns
-    # will be added onto each other
+    # will be added onto each other (with the numcolwise(sum) command)
     tempdf <- plyr::ddply(taxaAbund, taxRank, plyr::numcolwise(sum))
-    # create empty two column dataframe for the Names
+    # create empty two column dataframe for the Names and Long_Names
     name <- data.frame(Name = as.character(),
                        Long_Name = as.character())
-    # iterate through all rows of the dataframe
-    for (i in 1:nrow(tempdf)) {
-      # iterate through the taxRank elements except the last
-      for (j in 1:(x-1))
+    # iterate through all rows of the dataframe with the variable dfrow
+    for (dfrow in 1:nrow(tempdf)) {
+      # iterate through the taxRank elements except the last with the variable TR
+      for (TR in 1:(tRlength-1))
         # checks if a name is assigned for the current row - if not it will
         # assign the entry of the lowest hierarchical taxonomic rank that is
         # not NA if the lowest possible rank is NA an NA remark will be added
         # to the name indicating at which rank a non NA entry was found
         # a long name will be assigned in a similar mannerism by combining the
-        # entries of each rank entries containing an "unknown" string will be
-        # replaced by "Unknown_'taxonomic_rank'_'the entry of the taxonomic
-        # rank above'"
+        # entries of each rank
+        # entries containing an "unknown" string will be replaced by
+        # "Unknown_'taxonomic_rank'_'the entry of the taxonomic rank above'"
       {
         if
         (
-          # check if the current entry is neither NA not contains an "unknown"
-          # string nor the "incertae sedis" string and then assigns it as the
-          # name
-          is.na(name[i, 1])  &
-          !is.na(tempdf[i, x]) &
-          !stringr::str_detect(tempdf[i, x],
+          # check if the current entry is neither NA nor contains an "unknown"
+          # string nor the "incertae sedis" string
+          # if so assigns the entry of the current taxonomic rank (tRlength) as the
+          # entry of the name column(1) of the name object
+          is.na(name[dfrow, 1])  &
+          !is.na(tempdf[dfrow, tRlength]) &
+          !stringr::str_detect(tempdf[dfrow, tRlength],
                                stringr::fixed("unknown",
                                               ignore_case = T)) &
-          !stringr::str_detect(tempdf[i, x],
+          !stringr::str_detect(tempdf[dfrow, tRlength],
                                stringr::fixed("incertae sedis",
                                               ignore_case = T))
         )
         {
-          name[i, 1] <- tempdf[i, x]
+          name[dfrow, 1] <- tempdf[dfrow, tRlength]
         }
         else if
         (
           # check the rest of the entries if they are neither NA nor contain
           # the "incertae sedis" string and then assign
           # "Unknown_'taxonomic_rank'_'taxonomic rank above = its entry'
-          is.na(name[i, 1]) &
-          !is.na(tempdf[i, x]) &
-          !stringr::str_detect(tempdf[i, x],
+          is.na(name[dfrow, 1]) &
+          !is.na(tempdf[dfrow, tRlength]) &
+          !stringr::str_detect(tempdf[dfrow, tRlength],
                                stringr::fixed("incertae sedis",
                                               ignore_case = T))
         )
         {
-          name [i, 1] <- paste0("Unknown_",
-                                taxRank[x],
+          name [dfrow, 1] <- paste0("Unknown_",
+                                taxRank[tRlength],
                                 "(",
-                                taxRank[x - j],
+                                taxRank[tRlength - TR],
                                 "=",
-                                tempdf[i , x - j],
+                                tempdf[dfrow , tRlength - TR],
                                 ")")
 
 
@@ -486,82 +490,105 @@ illumina_analysis <- function(input_path = "./files",
         (
           # check if the entry is not NA and then assign
           # 'taxonomic rank (Icertae)_taxonomic rank above = its entry'
-          is.na(name[i, 1]) &
-          !is.na(tempdf[i, x])
+          is.na(name[dfrow, 1]) &
+          !is.na(tempdf[dfrow, tRlength])
         )
         {
-          name [i, 1] <- paste0(taxRank[x],
+          name [dfrow, 1] <- paste0(taxRank[tRlength],
                                 "(Incertae)_",
-                                taxRank[x - j],
+                                taxRank[dfrow - TR],
                                 "=",
-                                tempdf[i , x - j])
+                                tempdf[dfrow , tRlength - TR])
         }
         else if
         (
-          is.na(name[i, 1]) &
-          !is.na(tempdf[i, x - j]) &
-          !stringr::str_detect(tempdf[i, x - j],
+          is.na(name[dfrow, 1]) &
+          !is.na(tempdf[dfrow, tRlength - TR]) &
+          !stringr::str_detect(tempdf[dfrow, tRlength - TR],
                               stringr::fixed("unknown",
                                              ignore_case = T)) &
-          !stringr::str_detect(tempdf[i, x - j],
+          !stringr::str_detect(tempdf[dfrow, tRlength - TR],
                                stringr::fixed("incertae",
                                               ignore_case = T))
         )
         {
-          name[i, 1] <- paste0(tempdf[i, x - j],
+          name[dfrow, 1] <- paste0(tempdf[dfrow, tRlength - TR],
                                "_NA(",
-                               taxRank[x - (j - 1)],
+                               taxRank[tRlength - (TR - 1)],
                                ")" )
 
         }
         else if
         (
-          is.na(name[i, 1]) &
-          !is.na(tempdf[i, x - j]) &
-          !stringr::str_detect(tempdf[i, x - j],
+          is.na(name[dfrow, 1]) &
+          !is.na(tempdf[dfrow, tRlength - TR]) &
+          !stringr::str_detect(tempdf[dfrow, tRlength - TR],
                                stringr::fixed("incertae",
                                               ignore_case = T))
         )
         {
-          name [i, 1] <- paste0("Unknown_",
-                                taxRank[x - j],
+          name [dfrow, 1] <- paste0("Unknown_",
+                                taxRank[tRlength - TR],
                                 "(",
-                                taxRank[x - (j + 1)],
+                                taxRank[tRlength - (TR + 1)],
                                 "=",
-                                tempdf[i , x - (j + 1)],
+                                tempdf[dfrow , tRlength - (TR + 1)],
                                 ")")
         } else if
         (
-          is.na(name[i, 1]) &
-          !is.na(tempdf[i, x - j])
+          is.na(name[dfrow, 1]) &
+          !is.na(tempdf[dfrow, tRlength - TR])
         )
         {
-          name [i, 1] <- paste0(taxRank[x - j],
+          name [dfrow, 1] <- paste0(taxRank[tRlength - TR],
                                 "(Incertae)_",
-                                taxRank[x - (j + 1)],
+                                taxRank[tRlength - (TR + 1)],
                                 "=",
-                                tempdf[i , x - (j + 1)])
+                                tempdf[dfrow , tRlength - (TR + 1)])
         } else if
         (
-          is.na(name[i, 1]) &
-          is.na(tempdf[i, 1])
+          is.na(name[dfrow, 1]) &
+          is.na(tempdf[dfrow, 1])
         )
         {
-          name[i, 1] <- paste0("NA_(",
+          name[dfrow, 1] <- paste0("NA_(",
                                taxRank[1],
                                ")")
         }
       }
-      for (k in 1:x) {
-        if (is.na(name[i, 2]))
+      # assignment of the Long_Name column within the name object
+      # iterates with the variable k from 1 to the length of the current taxRank (x)
+      for (k in 1:tRlength) {
+        # check if the current row (i) has an entry in the Long_name column (col 2)
+        # if not it will assign the the k entry of this row from the tempdf as the
+        # long name
+        if (is.na(name[dfrow, 2]))
         {
-          name[i, 2] <- tempdf[i, k]
-        } else {
-          if (is.na(tempdf[i, k]))
+          if (!is.na(tempdf[dfrow, k]))
           {
-            name[i, 2] <- paste0(name[i, 2], "_NA")
-          } else {
-            name[i, 2] <- paste0(name[i, 2], "_", tempdf[i,k])
+            name[dfrow, 2] <- tempdf[dfrow, k]
+          }
+          # if the k entry of the tempdf is NA it will assign NA_("k taxRank entry")
+          # as the Long_Name entry
+          else if (is.na(tempdf[dfrow, k]))
+          {
+            name[dfrow, 2] <- paste0("NA_(",
+                                 taxRank[k],
+                                 ")")
+          }
+
+        }
+        # if the Long_Name already has an entry the entry will be appended
+        else
+        {
+          # append _NA if the k column of tempdf is NA
+          if (is.na(tempdf[dfrow, k]))
+          {
+            name[dfrow, 2] <- paste0(name[dfrow, 2], "_NA")
+          }
+          # if the k column of the tempdf is NOT NA the entry itself will be appended
+          else {
+            name[dfrow, 2] <- paste0(name[dfrow, 2], "_", tempdf[dfrow, k])
           }
         }
 
@@ -608,7 +635,7 @@ illumina_analysis <- function(input_path = "./files",
     temps3$Occurance <- tempOcc
 
     message(paste0("Calculating Co-Occurance of ",
-                   taxRank[x]))
+                   taxRank[tRlength]))
     # calculates Co-Occurance using the Cooccur package
     temps3$Co_Occurance <- cooccur::cooccur(dplyr::select(tempOcc,
                                                           where(is.numeric)),
@@ -625,23 +652,23 @@ illumina_analysis <- function(input_path = "./files",
                                        values_to = "Abundance")
 
     # assign the temporary S3 object to the current taxonomic rank
-    assign(taxRank[x], temps3)
+    assign(taxRank[tRlength], temps3)
 
     # save an xls table with the abundances
     xlsx::write.xlsx(temps3$Abundance,
                      paste0(tabs,
                             "/Abundance.xls"),
-                     sheetName = taxRank[x],
+                     sheetName = taxRank[tRlength],
                      append = T)
     xlsx::write.xlsx(temps3$relativeAbundance,
                      paste0(tabs,
                             "/Abundance.xls"),
                      sheetName = paste0("relativ",
-                                        taxRank[x]),
+                                        taxRank[tRlength]),
                      append = T)
 
     # move to the next higher taxonomic rank
-    taxRank <- taxRank[1:x-1]
+    taxRank <- taxRank[1:(tRlength - 1)]
 
     # remove temporary files
     rm(tempdf)
