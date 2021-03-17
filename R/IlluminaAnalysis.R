@@ -904,11 +904,20 @@ illumina_analysis <- function(input_path = "./files",
   #----------------------------------------------------------------------------->Phyloseq pipeline and Clean Up
   message("Creating phyloseq element")
   # use the phyloseq function with the created ASV table as the input OTU table
-  phylo <- phyloseq::phyloseq(phyloseq::otu_table(NonChime,
-                                                  taxa_are_rows = F),
-                    phyloseq::sample_data(SampleDataFrame),
-                    phyloseq::tax_table(taxonomy),
-                    phyloseq::phy_tree(fitGTR$tree))
+  if (!skipTree)
+  {
+    phylo <- phyloseq::phyloseq(phyloseq::otu_table(NonChime,
+                                                    taxa_are_rows = F),
+                                phyloseq::sample_data(SampleDataFrame),
+                                phyloseq::tax_table(taxonomy),
+                                phyloseq::phy_tree(fitGTR$tree))
+  } else
+  {
+    phylo <- phyloseq::phyloseq(phyloseq::otu_table(NonChime,
+                                                    taxa_are_rows = F),
+                                phyloseq::sample_data(SampleDataFrame),
+                                phyloseq::tax_table(taxonomy))
+  }
 
   # store the DNA sequence information of the taxa on the seqref() portion
   # of the phyloseq element
