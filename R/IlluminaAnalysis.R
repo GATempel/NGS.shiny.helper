@@ -852,7 +852,7 @@ illumina_analysis <- function(input_path = "./files",
 
   # create the phylogenetic tree if the option to skip it was not chosen and create
   # a value denoting the chosen option for further use downstream
-  if (skipTree == F) {
+  if (!skipTree) {
     # create boolean Value to note if phylogenetic tree was created
     skipedTree <- F
     # extract sequences
