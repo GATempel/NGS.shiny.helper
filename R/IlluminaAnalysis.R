@@ -161,7 +161,7 @@ illumina_analysis <- function(input_path = "./files",
   logframe <- data.frame(Finished = character(),
                          Date = character(),
                          Time = character(),
-                         stringsAsFactors = F)
+                         stringsAsFactors = FALSE)
 
   # updates the logframe
   logframe <- addLog("Directory setup", logframe)
@@ -180,7 +180,7 @@ illumina_analysis <- function(input_path = "./files",
   # full.names = T because the full path is needed for file movement
   filelist <- list.files(path = input_path,
                          pattern = ".fastq.gz",
-                         full.names = T)
+                         full.names = TRUE)
   message(paste0("You are processing ",
                  length(filelist) / 2,
                  " sample files."))
@@ -211,10 +211,10 @@ illumina_analysis <- function(input_path = "./files",
   message("Files are being read.")
   FastqForward <- gtools::mixedsort(list.files(SFO,
                                                pattern = "_R1_001.fastq.gz",
-                                               full.names = T))
+                                               full.names = TRUE))
   FastqReverse <- gtools::mixedsort(list.files(SFO,
                                                pattern = "_R2_001.fastq.gz",
-                                               full.names = T))
+                                               full.names = TRUE))
 
   # creates a list that contains the elements
   # of each Illumina file name split by the "_"
@@ -228,7 +228,7 @@ illumina_analysis <- function(input_path = "./files",
   # counts the first occurring amount of numbers per samplename and adds to all
   # of them zeros in front until they are all of the same length
   # combines the letters and the extended numbers into the new samplename
-  if (resort == T){
+  if (resort){
     SampleLetter <- str_extract(SampleN, "([[:alpha:]])+")
     SampleNumber <- str_extract(SampleN, "([[:digit:]])+")
     SampleNames <- NULL
@@ -329,18 +329,18 @@ illumina_analysis <- function(input_path = "./files",
   DadaForward <- dada2::dada(FilterForward,
                              ErrorForward,
                              multithread = multithreading,
-                             pool = T)
+                             pool = TRUE)
   DadaReverse <- dada2::dada(FilterReverse,
                              ErrorReverse,
                              multithread = multithreading,
-                             pool = T)
+                             pool = TRUE)
 
   # merge the forward and the matching reverse strands of the processed data
   MergerDada <- dada2::mergePairs(DadaForward,
                                   FilterForward,
                                   DadaReverse,
                                   FilterReverse,
-                                  verbose = T)
+                                  verbose = TRUE)
 
   # create a sequence table of the merged pairs
   SeqTab <- dada2::makeSequenceTable(MergerDada)
@@ -355,7 +355,7 @@ illumina_analysis <- function(input_path = "./files",
   NonChime <- dada2::removeBimeraDenovo(SeqTabRange,
                                         method = "consensus",
                                         multithread = multithreading,
-                                        verbose = T)
+                                        verbose = TRUE)
 
   # updating logframe
   logframe <- addLog("Learning Errorrates", logframe)
@@ -458,10 +458,10 @@ illumina_analysis <- function(input_path = "./files",
               if (!is.na(tempdf[dfrow, tRlength - TR]) &
                   !stringr::str_detect(tempdf[dfrow, tRlength - TR],
                                        stringr::fixed("unknown",
-                                                      ignore_case = T)) &
+                                                      ignore_case = TRUE)) &
                   !stringr::str_detect(tempdf[dfrow, tRlength - TR],
                                        stringr::fixed("incertae",
-                                                      ignore_case = T)) )
+                                                      ignore_case = TRUE)) )
               {
                 # if the above stated if clauses are all TRUE the current row (dfrow)
                 # of the first column (1) of the name dataframe object will be
@@ -511,7 +511,7 @@ illumina_analysis <- function(input_path = "./files",
         (
           stringr::str_detect(tempdf[dfrow, tRlength],
                               stringr::fixed("unknown",
-                                             ignore_case = T))
+                                             ignore_case = TRUE))
         )
         {
           # start of for loop to iterate from 0 to penultimate value of tRlength
@@ -528,10 +528,10 @@ illumina_analysis <- function(input_path = "./files",
               if (!is.na(tempdf[dfrow, tRlength - TR]) &
                   !stringr::str_detect(tempdf[dfrow, tRlength - TR],
                                        stringr::fixed("unknown",
-                                                      ignore_case = T)) &
+                                                      ignore_case = TRUE)) &
                   !stringr::str_detect(tempdf[dfrow, tRlength - TR],
                                        stringr::fixed("incertae",
-                                                      ignore_case = T)) )
+                                                      ignore_case = TRUE)) )
               {
                 # if the above stated if clauses are all TRUE the current row (dfrow)
                 # of the first column (1) of the name dataframe object will be
@@ -583,7 +583,7 @@ illumina_analysis <- function(input_path = "./files",
         (
           stringr::str_detect(tempdf[dfrow, tRlength],
                               stringr::fixed("incertae",
-                                             ignore_case = T))
+                                             ignore_case = TRUE))
         )
         {
           # start of for loop to iterate from 0 to penultimate value of tRlength
@@ -600,10 +600,10 @@ illumina_analysis <- function(input_path = "./files",
               if (!is.na(tempdf[dfrow, tRlength - TR]) &
                   !stringr::str_detect(tempdf[dfrow, tRlength - TR],
                                        stringr::fixed("unknown",
-                                                      ignore_case = T)) &
+                                                      ignore_case = TRUE)) &
                   !stringr::str_detect(tempdf[dfrow, tRlength - TR],
                                        stringr::fixed("incertae",
-                                                      ignore_case = T)) )
+                                                      ignore_case = TRUE)) )
               {
                 # if the above stated if clauses are all TRUE the current row (dfrow)
                 # of the first column (1) of the name dataframe object will be
@@ -763,7 +763,7 @@ illumina_analysis <- function(input_path = "./files",
 
     # create element contain the the rownames sorted by Abundance for highest
     # to lowest
-    tNames <- row.names(tempdf[base::order(tempdf$Total, decreasing = T),])
+    tNames <- row.names(tempdf[base::order(tempdf$Total, decreasing = TRUE),])
 
     # assign the dataframe and the sorted name element to a temporary S3 object
     temps3$Abundance <- tempdf
@@ -815,13 +815,13 @@ illumina_analysis <- function(input_path = "./files",
                      paste0(tabs,
                             "/Abundance.xls"),
                      sheetName = taxRank[tRlength],
-                     append = T)
+                     append = TRUE)
     xlsx::write.xlsx(temps3$relativeAbundance,
                      paste0(tabs,
                             "/Abundance.xls"),
                      sheetName = paste0("relativ",
                                         taxRank[tRlength]),
-                     append = T)
+                     append = TRUE)
 
     # move to the next higher taxonomic rank
     taxRank <- taxRank[0:(tRlength - 1)]
@@ -854,7 +854,7 @@ illumina_analysis <- function(input_path = "./files",
   # a value denoting the chosen option for further use downstream
   if (!skipTree) {
     # create boolean Value to note if phylogenetic tree was created
-    skipedTree <- F
+    skipedTree <- FALSE
     # extract sequences
     message("Creating a distance matrix of the sequences -
           this process can take several minutes.")
@@ -878,9 +878,9 @@ illumina_analysis <- function(input_path = "./files",
                          k = 4,
                          inv = 0.2)
     fitGTR <- phangorn::optim.pml(fit,
-                                  model="GTR",
-                                  optInv=TRUE,
-                                  optGamma=TRUE,
+                                  model = "GTR",
+                                  optInv = TRUE,
+                                  optGamma = TRUE,
                                   rearrangement = "stochastic",
                                   control = phangorn::pml.control(trace = 0)
     )
@@ -889,7 +889,7 @@ illumina_analysis <- function(input_path = "./files",
     logframe <- addLog("Creating distance matrix and phylogenetic tree",
                        logframe)
   } else {
-    skipedTree <- T
+    skipedTree <- TRUE
   }
 
 
@@ -907,14 +907,14 @@ illumina_analysis <- function(input_path = "./files",
   if (!skipTree)
   {
     phylo <- phyloseq::phyloseq(phyloseq::otu_table(NonChime,
-                                                    taxa_are_rows = F),
+                                                    taxa_are_rows = FALSE),
                                 phyloseq::sample_data(SampleDataFrame),
                                 phyloseq::tax_table(taxonomy),
                                 phyloseq::phy_tree(fitGTR$tree))
   } else
   {
     phylo <- phyloseq::phyloseq(phyloseq::otu_table(NonChime,
-                                                    taxa_are_rows = F),
+                                                    taxa_are_rows = FALSE),
                                 phyloseq::sample_data(SampleDataFrame),
                                 phyloseq::tax_table(taxonomy))
   }
@@ -989,7 +989,7 @@ illumina_analysis <- function(input_path = "./files",
                         number_of_samples = length(filelist) / 2 ,
                         ID = ID)
   timeLog <- rbind(timeLog, newTRow)
-  write.csv(timeLog, "./internal_files/timelog.csv", row.names = F)
+  write.csv(timeLog, "./internal_files/timelog.csv", row.names = FALSE)
 
   # end of process message
   message("Finished Illumina Basic Analysis at:")
